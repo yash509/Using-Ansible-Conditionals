@@ -1,0 +1,101 @@
+Ques:-
+
+The Nautilus DevOps team had a discussion about, how they can train different team members to use Ansible for different automation tasks. There are numerous ways to perform a particular task using Ansible, but we want to utilize each aspect that Ansible offers. The team wants to utilise Ansible's conditionals to perform the following task:
+
+An inventory file is already placed under /home/thor/ansible directory on jump host, with all the Stratos DC app servers included.
+
+1. Create a playbook /home/thor/ansible/playbook.yml and make sure to use Ansible's when conditionals statements to perform the below given tasks.
+
+2. Copy blog.txt file present under /usr/src/finance directory on jump host to App Server 1 under /opt/finance directory. Its user and group owner must be user tony and its permissions must be 0755 .
+
+3. Copy story.txt file present under /usr/src/finance directory on jump host to App Server 2 under /opt/finance directory. Its user and group owner must be user steve and its permissions must be 0755 .
+
+4. Copy media.txt file present under /usr/src/finance directory on jump host to App Server 3 under /opt/finance directory. Its user and group owner must be user banner and its permissions must be 0755.
+
+NOTE: You can use ansible_nodename variable from gathered facts with when condition. Additionally, please make sure you are running the play for all hosts i.e use - hosts: all.
+
+Note: Validation will try to run the playbook using command ansible-playbook -i inventory playbook.yml, so please make sure the playbook works this way without passing any extra arguments.
+
+
+
+
+Soln:-
+
+Step 1:- Navigate to the playbook directory
+
+cd /home/thor/ansible/
+
+
+
+Step 2:- Edit the inventory file (with the below content)
+
+vi inventory
+
+[app_servers]
+stapp01 ansible_host=stapp01 ansible_user=tony ansible_ssh_pass=Ir0nM@n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+stapp02 ansible_host=stapp02 ansible_user=steve ansible_ssh_pass=Am3ric@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+stapp03 ansible_host=stapp03 ansible_user=banner ansible_ssh_pass=BigGr33n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+
+
+Step 3:- Create the Playbook 
+
+vi playbook.yml
+
+---
+- name: Finance file deployment
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Copy blog.txt to App Server 1
+      copy:
+        src: /usr/src/finance/blog.txt
+        dest: /opt/finance/blog.txt
+        owner: tony
+        group: tony
+        mode: '0755'
+      when: ansible_nodename == "stapp01"
+
+    - name: Copy story.txt to App Server 2
+      copy:
+        src: /usr/src/finance/story.txt
+        dest: /opt/finance/story.txt
+        owner: steve
+        group: steve
+        mode: '0755'
+      when: ansible_nodename == "stapp02"
+
+    - name: Copy media.txt to App Server 3
+      copy:
+        src: /usr/src/finance/media.txt
+        dest: /opt/finance/media.txt
+        owner: banner
+        group: banner
+        mode: '0755'
+      when: ansible_nodename == "stapp03"
+
+
+
+Step 4: Test the Server Connectivity
+
+ansible -i inventory all -m ping
+
+
+
+Step 5: Apply the playbook
+
+ansible-playbook -i inventory playbook.yml
+
+
+
+Step 6:- Verification
+
+ansible -i inventory stapp01 -a "ls -la /opt/finance"
+ansible -i inventory stapp01 -a "cat /opt/finance/blog.txt"
+
+ansible -i inventory stapp02 -a "ls -la /opt/finance"
+ansible -i inventory stapp02 -a "cat /opt/finance/story.txt"
+
+ansible -i inventory stapp03 -a "ls -la /opt/finance"
+ansible -i inventory stapp03 -a "cat /opt/finance/media.txt"
